@@ -9,9 +9,20 @@ class ChecklistManageScreen extends StatefulWidget {
   State<ChecklistManageScreen> createState() => _ChecklistManageScreenState();
 }
 
+class _ChecklistItem {
+  final String id;
+  String title;
+  int order;
+
+  _ChecklistItem({required this.id, required this.title, required this.order});
+}
+
 class _ChecklistManageScreenState extends State<ChecklistManageScreen> {
   String get _currentUserId => FirebaseAuth.instance.currentUser!.uid;
   final TextEditingController _controller = TextEditingController();
+
+  List<_ChecklistItem> _items = [];
+  bool _isLoading = true;
 
   static const List<String> _defaultItems = [
     '항상 스플릿 스텝',
@@ -39,125 +50,142 @@ class _ChecklistManageScreenState extends State<ChecklistManageScreen> {
     '백핸드 라켓드롭',
   ];
 
+  CollectionReference get _collection => FirebaseFirestore.instance
+      .collection('users')
+      .doc(_currentUserId)
+      .collection('checklists');
+
+  @override
+  void initState() {
+    super.initState();
+    _loadItems();
+  }
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('체크리스트 관리'),
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'reset') _confirmReset();
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'reset',
-                child: Row(
-                  children: [
-                    Icon(Icons.refresh, size: 18),
-                    SizedBox(width: 8),
-                    Text('기본값으로 초기화'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(_currentUserId)
-            .collection('checklists')
-            .orderBy('createdAt', descending: false)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) return Center(child: Text('에러: ${snapshot.error}'));
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+  Future<void> _loadItems() async {
+    setState(() => _isLoading = true);
+    final snapshot = await _collection.orderBy('order').get();
 
-          final docs = snapshot.data!.docs;
+    List<_ChecklistItem> loaded = [];
+    bool needsMigration = false;
 
-          if (docs.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('체크리스트 항목이 없습니다.'),
-                  const SizedBox(height: 12),
-                  TextButton.icon(
-                    onPressed: _confirmReset,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('기본값 불러오기'),
-                  ),
-                ],
-              ),
-            );
-          }
+    for (int i = 0; i < snapshot.docs.length; i++) {
+      final doc = snapshot.docs[i];
+      final data = doc.data() as Map<String, dynamic>;
+      final hasOrder = data.containsKey('order');
+      if (!hasOrder) needsMigration = true;
+      loaded.add(_ChecklistItem(
+        id: doc.id,
+        title: data['title'] ?? '',
+        order: hasOrder ? (data['order'] as int) : i,
+      ));
+    }
 
-          return ListView.builder(
-            itemCount: docs.length,
-            itemBuilder: (context, index) {
-              final doc = docs[index];
-              final data = doc.data() as Map<String, dynamic>;
-              return ListTile(
-                title: Text(data['title'] ?? ''),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined),
-                      onPressed: () => _showEditDialog(doc.id, data['title'] ?? ''),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () => _deleteItem(doc.id),
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddDialog,
-        child: const Icon(Icons.add),
-      ),
-    );
+    // order 필드가 없는 기존 문서들을 일괄 업데이트
+    if (needsMigration) {
+      final batch = FirebaseFirestore.instance.batch();
+      for (int i = 0; i < loaded.length; i++) {
+        batch.update(_collection.doc(loaded[i].id), {'order': i});
+        loaded[i].order = i;
+      }
+      await batch.commit();
+    }
+
+    setState(() {
+      _items = loaded;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _onReorderItem(int oldIndex, int newIndex) async {
+    setState(() {
+      final item = _items.removeAt(oldIndex);
+      _items.insert(newIndex, item);
+      _reindexOrders();
+    });
+    await _saveAllOrders();
+  }
+
+  void _reindexOrders() {
+    for (int i = 0; i < _items.length; i++) {
+      _items[i].order = i;
+    }
+  }
+
+  Future<void> _saveAllOrders() async {
+    final batch = FirebaseFirestore.instance.batch();
+    for (final item in _items) {
+      batch.update(_collection.doc(item.id), {'order': item.order});
+    }
+    await batch.commit();
   }
 
   void _showAddDialog() {
     _controller.clear();
+    int insertPosition = _items.length; // 기본: 맨 뒤
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('새 항목 추가'),
-        content: TextField(
-          controller: _controller,
-          decoration: const InputDecoration(hintText: '예: 스플릿 스텝 잘하기'),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
-          TextButton(
-            onPressed: () {
-              if (_controller.text.isNotEmpty) {
-                _addItem(_controller.text.trim());
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('추가'),
-          ),
-        ],
-      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('새 항목 추가'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _controller,
+                    decoration: const InputDecoration(
+                      hintText: '체크리스트 내용 입력',
+                      labelText: '내용',
+                    ),
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('삽입 위치', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  DropdownButton<int>(
+                    isExpanded: true,
+                    value: insertPosition,
+                    items: [
+                      const DropdownMenuItem(value: 0, child: Text('맨 위')),
+                      ..._items.asMap().entries.map((e) => DropdownMenuItem(
+                            value: e.key + 1,
+                            child: Text(
+                              '${e.value.title} 뒤',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          )),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) setDialogState(() => insertPosition = val);
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
+                TextButton(
+                  onPressed: () {
+                    if (_controller.text.trim().isNotEmpty) {
+                      _addItem(_controller.text.trim(), insertPosition);
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('추가'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -176,7 +204,7 @@ class _ChecklistManageScreenState extends State<ChecklistManageScreen> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
           TextButton(
             onPressed: () {
-              if (_controller.text.isNotEmpty) {
+              if (_controller.text.trim().isNotEmpty) {
                 _editItem(id, _controller.text.trim());
                 Navigator.pop(context);
               }
@@ -208,42 +236,50 @@ class _ChecklistManageScreenState extends State<ChecklistManageScreen> {
     );
   }
 
-  Future<void> _addItem(String title) async {
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(_currentUserId)
-        .collection('checklists')
-        .add({
+  Future<void> _addItem(String title, int insertIndex) async {
+    // insertIndex 이후 항목들의 order를 +1
+    final batch = FirebaseFirestore.instance.batch();
+    for (int i = insertIndex; i < _items.length; i++) {
+      _items[i].order = i + 1;
+      batch.update(_collection.doc(_items[i].id), {'order': i + 1});
+    }
+
+    final newDoc = _collection.doc();
+    final newItem = _ChecklistItem(id: newDoc.id, title: title, order: insertIndex);
+    batch.set(newDoc, {
       'title': title,
+      'order': insertIndex,
       'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    await batch.commit();
+
+    setState(() {
+      _items.insert(insertIndex, newItem);
     });
   }
 
   Future<void> _editItem(String id, String newTitle) async {
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(_currentUserId)
-        .collection('checklists')
-        .doc(id)
-        .update({'title': newTitle});
+    await _collection.doc(id).update({'title': newTitle});
+    setState(() {
+      final item = _items.firstWhere((e) => e.id == id);
+      item.title = newTitle;
+    });
   }
 
   Future<void> _deleteItem(String id) async {
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(_currentUserId)
-        .collection('checklists')
-        .doc(id)
-        .delete();
+    await _collection.doc(id).delete();
+    setState(() {
+      _items.removeWhere((e) => e.id == id);
+      _reindexOrders();
+    });
+    await _saveAllOrders();
   }
 
   Future<void> _resetToDefaults() async {
-    final collectionRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(_currentUserId)
-        .collection('checklists');
+    setState(() => _isLoading = true);
 
-    final existing = await collectionRef.get();
+    final existing = await _collection.get();
     final batch = FirebaseFirestore.instance.batch();
 
     for (final doc in existing.docs) {
@@ -251,20 +287,102 @@ class _ChecklistManageScreenState extends State<ChecklistManageScreen> {
     }
 
     final now = Timestamp.now();
+    final List<_ChecklistItem> newItems = [];
     for (int i = 0; i < _defaultItems.length; i++) {
-      final newDoc = collectionRef.doc();
+      final newDoc = _collection.doc();
       batch.set(newDoc, {
         'title': _defaultItems[i],
+        'order': i,
         'createdAt': Timestamp(now.seconds + i, now.nanoseconds),
       });
+      newItems.add(_ChecklistItem(id: newDoc.id, title: _defaultItems[i], order: i));
     }
 
     await batch.commit();
+
+    setState(() {
+      _items = newItems;
+      _isLoading = false;
+    });
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('기본 체크리스트로 초기화했습니다.')),
       );
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('체크리스트 관리'),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'reset') _confirmReset();
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'reset',
+                child: Row(
+                  children: [
+                    Icon(Icons.refresh, size: 18),
+                    SizedBox(width: 8),
+                    Text('기본값으로 초기화'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _items.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('체크리스트 항목이 없습니다.'),
+                      const SizedBox(height: 12),
+                      TextButton.icon(
+                        onPressed: _confirmReset,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('기본값 불러오기'),
+                      ),
+                    ],
+                  ),
+                )
+              : ReorderableListView.builder(
+                  onReorderItem: _onReorderItem,
+                  itemCount: _items.length,
+                  itemBuilder: (context, index) {
+                    final item = _items[index];
+                    return ListTile(
+                      key: ValueKey(item.id),
+                      leading: const Icon(Icons.drag_handle, color: Colors.grey),
+                      title: Text(item.title),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit_outlined),
+                            onPressed: () => _showEditDialog(item.id, item.title),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            onPressed: () => _deleteItem(item.id),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddDialog,
+        child: const Icon(Icons.add),
+      ),
+    );
   }
 }
