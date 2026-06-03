@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tennis_habit/features/review/presentation/screens/daily_review_screen.dart';
 import 'package:tennis_habit/features/stats/presentation/screens/stats_dashboard_screen.dart';
+import 'package:tennis_habit/features/history/presentation/screens/history_timeline_screen.dart';
+import 'package:tennis_habit/features/profile/presentation/screens/profile_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -10,11 +12,13 @@ class MainNavigationScreen extends StatefulWidget {
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _currentIndex = 1; // 기본값을 '회고' 탭으로 설정
+  int _currentIndex = 2; // 기본값을 '회고' 탭으로 설정 (탭 3)
 
   final List<Widget> _screens = [
     const StatsDashboardScreen(),
+    const HistoryTimelineScreen(),
     const DailyReviewScreen(),
+    const ProfileScreen(),
   ];
 
   @override
@@ -31,14 +35,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             _currentIndex = index;
           });
         },
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.bar_chart),
             label: '통계',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_month),
+            label: '히스토리',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.edit_note),
             label: '회고',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: '프로필',
           ),
         ],
       ),
