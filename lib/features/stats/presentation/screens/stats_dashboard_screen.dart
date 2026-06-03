@@ -61,6 +61,8 @@ class StatsDashboardScreen extends StatelessWidget {
                   height: 250,
                   child: LineChart(_buildLineChartData(logs, context)),
                 ),
+                const SizedBox(height: 16),
+                _buildLegend(logs, context),
                 const SizedBox(height: 32),
                 const Text('세션 태그 분포', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
@@ -81,11 +83,57 @@ class StatsDashboardScreen extends StatelessWidget {
   }
 
   LineChartData _buildLineChartData(List<TennisLogModel> logs, BuildContext context) {
-    final spots = <FlSpot>[];
-    for (int i = 0; i < logs.length; i++) {
-      double avgScore = logs[i].scores.values.fold(0, (sum, item) => sum + item) / logs[i].scores.length;
-      spots.add(FlSpot(i.toDouble(), avgScore));
+    // 1. 모든 고유 체크리스트 항목(key) 추출
+    final Set<String> allChecklistKeys = {};
+    for (var log in logs) {
+      allChecklistKeys.addAll(log.scores.keys);
     }
+
+    // 2. 항목별로 FlSpot 리스트 생성
+    final Map<String, List<FlSpot>> spotsMap = {
+      for (var key in allChecklistKeys) key: []
+    };
+
+    for (int i = 0; i < logs.length; i++) {
+      final log = logs[i];
+      for (var key in allChecklistKeys) {
+        // 해당 날짜에 항목 점수가 없으면 0(또는 이전 점수) 처리 방안 필요. 여기선 점수가 있는 경우만 그림.
+        if (log.scores.containsKey(key)) {
+          spotsMap[key]!.add(FlSpot(i.toDouble(), log.scores[key]!.toDouble()));
+        }
+      }
+    }
+
+    // 3. 색상 매핑
+    final colors = [
+      Theme.of(context).colorScheme.primary,
+      Theme.of(context).colorScheme.secondary,
+      Colors.pinkAccent,
+      Colors.orangeAccent,
+      Colors.tealAccent,
+      Colors.cyan,
+    ];
+
+    List<LineChartBarData> lineBarsData = [];
+    int colorIndex = 0;
+    
+    spotsMap.forEach((key, spots) {
+      if (spots.isNotEmpty) {
+        final color = colors[colorIndex % colors.length];
+        lineBarsData.add(
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            color: color,
+            barWidth: 3,
+            isStrokeCapRound: true,
+            dotData: const FlDotData(show: true),
+            belowBarData: BarAreaData(show: false), // 여러 선이 겹치므로 면적 채우기는 끕니다.
+          ),
+        );
+        colorIndex++;
+      }
+    });
 
     return LineChartData(
       gridData: const FlGridData(show: false),
@@ -106,24 +154,49 @@ class StatsDashboardScreen extends StatelessWidget {
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       ),
-      borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade800)),
+      borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade300)), // 테마 경계선
       minX: 0,
       maxX: logs.length.toDouble() - 1,
       minY: 1,
-      maxY: 3,
-      lineBarsData: [
-        LineChartBarData(
-          spots: spots,
-          isCurved: true,
-          color: Theme.of(context).colorScheme.primary, // Neon Yellow
-          barWidth: 4,
-          isStrokeCapRound: true,
-          dotData: const FlDotData(show: true),
-          belowBarData: BarAreaData(show: true, color: Theme.of(context).colorScheme.primary.withOpacity(0.1)),
-        ),
-      ],
+      maxY: 3.5, // 윗 공간 약간 확보
+      lineBarsData: lineBarsData,
     );
   }
+
+  Widget _buildLegend(List<TennisLogModel> logs, BuildContext context) {
+    final Set<String> allChecklistKeys = {};
+    for (var log in logs) {
+      allChecklistKeys.addAll(log.scores.keys);
+    }
+
+    final colors = [
+      Theme.of(context).colorScheme.primary,
+      Theme.of(context).colorScheme.secondary,
+      Colors.pinkAccent,
+      Colors.orangeAccent,
+      Colors.tealAccent,
+      Colors.cyan,
+    ];
+
+    int colorIndex = 0;
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
+      children: allChecklistKeys.map((key) {
+        final color = colors[colorIndex % colors.length];
+        colorIndex++;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            const SizedBox(width: 4),
+            Text(key, style: const TextStyle(fontSize: 12)),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
 
   PieChartData _buildPieChartData(List<TennisLogModel> logs, BuildContext context) {
     final Map<String, int> tagCounts = {};
