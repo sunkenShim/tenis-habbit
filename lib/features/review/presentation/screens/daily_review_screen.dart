@@ -24,7 +24,7 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
   final TextEditingController _feedbackController = TextEditingController();
 
   final List<String> _availableMatchTypes = ['연습', '레슨', '단식', '복식'];
-  final List<String> _availableCourtSurfaces = ['하드코트', '클레이코트', '잔디코트', '실내코트'];
+  final List<String> _availableCourtSurfaces = ['하드코트', '인조잔디코트', '클레이코트', '잔디코트'];
   bool _isLoading = true;
 
   @override
