@@ -4,10 +4,18 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:tennis_habit/features/review/domain/models/tennis_log_model.dart';
 import 'package:tennis_habit/core/utils/mock_data_generator.dart';
 
-class StatsDashboardScreen extends StatelessWidget {
+class StatsDashboardScreen extends StatefulWidget {
   const StatsDashboardScreen({super.key});
 
+  @override
+  State<StatsDashboardScreen> createState() => _StatsDashboardScreenState();
+}
+
+class _StatsDashboardScreenState extends State<StatsDashboardScreen> {
   final String _testUserId = 'test_user_id';
+  
+  // 선택되지 않은 항목들을 관리 (기본적으로 모두 선택된 상태)
+  final Set<String> _unselectedItems = {};
 
   @override
   Widget build(BuildContext context) {
@@ -83,13 +91,11 @@ class StatsDashboardScreen extends StatelessWidget {
   }
 
   LineChartData _buildLineChartData(List<TennisLogModel> logs, BuildContext context) {
-    // 1. 모든 고유 체크리스트 항목(key) 추출
     final Set<String> allChecklistKeys = {};
     for (var log in logs) {
       allChecklistKeys.addAll(log.scores.keys);
     }
 
-    // 2. 항목별로 FlSpot 리스트 생성
     final Map<String, List<FlSpot>> spotsMap = {
       for (var key in allChecklistKeys) key: []
     };
@@ -97,14 +103,12 @@ class StatsDashboardScreen extends StatelessWidget {
     for (int i = 0; i < logs.length; i++) {
       final log = logs[i];
       for (var key in allChecklistKeys) {
-        // 해당 날짜에 항목 점수가 없으면 0(또는 이전 점수) 처리 방안 필요. 여기선 점수가 있는 경우만 그림.
         if (log.scores.containsKey(key)) {
           spotsMap[key]!.add(FlSpot(i.toDouble(), log.scores[key]!.toDouble()));
         }
       }
     }
 
-    // 3. 색상 매핑
     final colors = [
       Theme.of(context).colorScheme.primary,
       Theme.of(context).colorScheme.secondary,
@@ -118,7 +122,8 @@ class StatsDashboardScreen extends StatelessWidget {
     int colorIndex = 0;
     
     spotsMap.forEach((key, spots) {
-      if (spots.isNotEmpty) {
+      // unselectedItems에 포함되지 않은 경우만 차트에 그림
+      if (spots.isNotEmpty && !_unselectedItems.contains(key)) {
         final color = colors[colorIndex % colors.length];
         lineBarsData.add(
           LineChartBarData(
@@ -128,11 +133,11 @@ class StatsDashboardScreen extends StatelessWidget {
             barWidth: 3,
             isStrokeCapRound: true,
             dotData: const FlDotData(show: true),
-            belowBarData: BarAreaData(show: false), // 여러 선이 겹치므로 면적 채우기는 끕니다.
+            belowBarData: BarAreaData(show: false),
           ),
         );
-        colorIndex++;
       }
+      colorIndex++; // 선택 여부와 상관없이 색상 인덱스는 고정 유지
     });
 
     return LineChartData(
@@ -154,11 +159,11 @@ class StatsDashboardScreen extends StatelessWidget {
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       ),
-      borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade300)), // 테마 경계선
+      borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade300)),
       minX: 0,
       maxX: logs.length.toDouble() - 1,
       minY: 1,
-      maxY: 3.5, // 윗 공간 약간 확보
+      maxY: 3.5,
       lineBarsData: lineBarsData,
     );
   }
@@ -180,23 +185,47 @@ class StatsDashboardScreen extends StatelessWidget {
 
     int colorIndex = 0;
     return Wrap(
-      spacing: 12,
+      spacing: 8,
       runSpacing: 8,
       children: allChecklistKeys.map((key) {
         final color = colors[colorIndex % colors.length];
         colorIndex++;
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-            const SizedBox(width: 4),
-            Text(key, style: const TextStyle(fontSize: 12)),
-          ],
+        
+        final isSelected = !_unselectedItems.contains(key);
+        final textColor = Theme.of(context).brightness == Brightness.dark 
+            ? (isSelected ? Colors.black : Colors.white) 
+            : (isSelected ? Colors.white : Colors.black);
+
+        return FilterChip(
+          label: Text(
+            key, 
+            style: TextStyle(
+              fontSize: 12, 
+              color: isSelected ? Colors.black : Colors.grey,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          selected: isSelected,
+          selectedColor: color,
+          backgroundColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: isSelected ? color : Colors.grey),
+          ),
+          showCheckmark: false,
+          onSelected: (bool selected) {
+            setState(() {
+              if (selected) {
+                _unselectedItems.remove(key); // 선택됨
+              } else {
+                _unselectedItems.add(key); // 선택 해제됨
+              }
+            });
+          },
         );
       }).toList(),
     );
   }
-
 
   PieChartData _buildPieChartData(List<TennisLogModel> logs, BuildContext context) {
     final Map<String, int> tagCounts = {};
