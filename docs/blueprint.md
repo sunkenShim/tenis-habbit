@@ -29,12 +29,45 @@
   "uid": "USER_UNIQUE_ID",
   "displayName": "테니스의길",
   "isPremium": false,
-  "equipment": {
-    "racket": "Wilson Pro Staff",
-    "string": "Luxilon Alu Power",
-    "tension": 52
-  },
   "createdAt": "2026-06-02T17:36:53Z"
+}
+```
+
+### [Sub-Collection] `/users/{uid}/rackets` (라켓 이력)
+```json
+{
+  "brand": "Wilson",
+  "model": "Pro Staff 97",
+  "weight": 315,
+  "gripSize": 2,
+  "purchaseDate": "2026-01-15T00:00:00Z",
+  "disposeDate": null, // null이면 현재 사용 중
+  "status": "active" // active, disposed
+}
+```
+
+### [Sub-Collection] `/users/{uid}/shoes` (테니스화 이력)
+```json
+{
+  "brand": "Asics",
+  "model": "Court FF 3",
+  "courtType": "All Court",
+  "purchaseDate": "2026-03-01T00:00:00Z",
+  "disposeDate": null,
+  "status": "active"
+}
+```
+
+### [Sub-Collection] `/users/{uid}/string_jobs` (스트링 교체 이력)
+```json
+{
+  "racketId": "RACKET_DOCUMENT_ID",
+  "mainString": "Luxilon Alu Power",
+  "crossString": "Luxilon Alu Power",
+  "mainTension": 52,
+  "crossTension": 50,
+  "stringingDate": "2026-05-20T00:00:00Z",
+  "memo": "여름 대비 텐션 상향"
 }
 ```
 
