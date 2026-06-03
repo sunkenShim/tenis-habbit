@@ -48,10 +48,7 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
         .map((doc) => doc.data()['title'] as String)
         .toList();
 
-    // Default items if none exist
-    if (checklistTitles.isEmpty) {
-      checklistTitles.addAll(['스플릿 스텝 잘하기', '공 4개 통과하는 느낌으로 치기', '라켓 끝까지 던지기']);
-    }
+    // 체크리스트가 없으면 빈 상태 유지 (체크리스트 관리에서 추가 유도)
 
     // 2. Fetch today's log if exists
     final logId = "${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}";
@@ -277,7 +274,15 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
                     onPressed: _fetchChecklistsAndTodayLog,
                     tooltip: '체크리스트 새로고침',
                   ),
-                  child: Column(
+                  child: _scores.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: Text(
+                            '체크리스트 항목이 없습니다.\n프로필 > 체크리스트 관리에서 추가해주세요.',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        )
+                      : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: _scores.keys.map((criteria) {
                       return Padding(
