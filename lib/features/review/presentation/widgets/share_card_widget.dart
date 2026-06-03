@@ -10,21 +10,24 @@ class ShareCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       width: 300,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A), // nightBackground
+        color: theme.colorScheme.background,
         borderRadius: BorderRadius.circular(20),
         image: DecorationImage(
           image: const NetworkImage('https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?auto=format&fit=crop&q=80&w=400'),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
-            Colors.black.withOpacity(0.6), // Make background darker
+            isDark ? Colors.black.withOpacity(0.6) : Colors.black.withOpacity(0.3),
             BlendMode.darken,
           ),
         ),
-        border: Border.all(color: const Color(0xFFCCFF00), width: 1), // Neon border
+        border: Border.all(color: theme.colorScheme.primary, width: 1),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -33,10 +36,10 @@ class ShareCardWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'TENNIS HABIT',
                 style: TextStyle(
-                  color: Color(0xFFCCFF00), // tennisNeon
+                  color: theme.colorScheme.primary,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2,
                 ),
@@ -48,9 +51,9 @@ class ShareCardWidget extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 40),
-          const Text(
+          Text(
             '오늘의 깨달음',
-            style: TextStyle(color: Color(0xFF0052FF), fontSize: 12, fontWeight: FontWeight.bold), // hardcourtBlue
+            style: TextStyle(color: theme.colorScheme.secondary, fontSize: 12, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
@@ -79,8 +82,8 @@ class ShareCardWidget extends StatelessWidget {
             icon: const Icon(Icons.share),
             label: const Text('오운완 공유하기'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFCCFF00),
-              foregroundColor: Colors.black,
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
               minimumSize: const Size(double.infinity, 45),
             ),
           ),

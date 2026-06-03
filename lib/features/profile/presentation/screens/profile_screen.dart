@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'checklist_manage_screen.dart';
+import 'package:tennis_habit/core/theme/app_theme.dart';
+import 'package:tennis_habit/main.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -135,6 +137,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.compress),
                   ),
+                ),
+                const SizedBox(height: 32),
+                const Text('디자인 테마 설정', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Divider(),
+                ValueListenableBuilder<AppThemeType>(
+                  valueListenable: themeNotifier,
+                  builder: (context, currentTheme, _) {
+                    return Column(
+                      children: AppThemeType.values.map((themeType) {
+                        return RadioListTile<AppThemeType>(
+                          title: Text(AppTheme.getThemeName(themeType)),
+                          value: themeType,
+                          groupValue: currentTheme,
+                          activeColor: Theme.of(context).colorScheme.primary,
+                          onChanged: (value) {
+                            if (value != null) themeNotifier.value = value;
+                          },
+                        );
+                      }).toList(),
+                    );
+                  },
                 ),
                 const SizedBox(height: 32),
                 const Text('앱 설정', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),

@@ -4,6 +4,9 @@ import 'firebase_options.dart';
 import 'features/home/presentation/screens/main_navigation_screen.dart';
 import 'core/theme/app_theme.dart';
 
+// 전역 테마 상태 관리
+final themeNotifier = ValueNotifier<AppThemeType>(AppThemeType.usOpen);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -17,11 +20,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Tennis Habit',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
-      home: const MainNavigationScreen(),
+    return ValueListenableBuilder<AppThemeType>(
+      valueListenable: themeNotifier,
+      builder: (context, currentThemeType, child) {
+        return MaterialApp(
+          title: 'Tennis Habit',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.getTheme(currentThemeType),
+          home: const MainNavigationScreen(),
+        );
+      },
     );
   }
 }
