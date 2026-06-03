@@ -3,7 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../features/review/domain/models/tennis_log_model.dart';
 
 class MockDataGenerator {
-  static final List<String> _tags = ['연습', '레슨', '단식', '복식', '하드코트', '클레이코트'];
+  static final List<String> _matchTypes = ['연습', '레슨', '단식', '복식'];
+  static final List<String> _courtSurfaces = ['하드코트', '클레이코트', '잔디코트'];
   static final List<String> _feedbacks = [
     '오늘은 서브가 아주 잘 들어갔다.',
     '포핸드 스트로크 시 라켓 면이 너무 닫히는 것 같다.',
@@ -21,7 +22,8 @@ class MockDataGenerator {
       final date = now.subtract(Duration(days: i));
       final log = TennisLogModel(
         date: date,
-        sessionTags: (_tags..shuffle()).take(random.nextInt(3) + 1).toList(),
+        matchTypes: (_matchTypes..shuffle()).take(random.nextInt(2) + 1).toList(),
+        courtSurface: _courtSurfaces[random.nextInt(_courtSurfaces.length)],
         conditionScore: random.nextInt(5) + 1,
         scores: {
           '스플릿 스텝 잘하기': random.nextInt(3) + 1,

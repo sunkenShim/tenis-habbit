@@ -123,7 +123,7 @@ class _HistoryTimelineScreenState extends State<HistoryTimelineScreen> {
           margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
           child: ListTile(
             title: Text(
-              '${log.sessionTags.join(", ")}',
+              '${log.matchTypes.join(", ")} | ${log.courtSurface}',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Column(
@@ -169,10 +169,13 @@ class _HistoryTimelineScreenState extends State<HistoryTimelineScreen> {
                   ),
                   const Divider(),
                   const SizedBox(height: 10),
-                  const Text('세션 태그', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('세션 상세', style: TextStyle(fontWeight: FontWeight.bold)),
                   Wrap(
                     spacing: 8,
-                    children: log.sessionTags.map((t) => Chip(label: Text(t))).toList(),
+                    children: [
+                      ...log.matchTypes.map((t) => Chip(label: Text(t))),
+                      Chip(label: Text(log.courtSurface), backgroundColor: Colors.green.withOpacity(0.1)),
+                    ],
                   ),
                   const SizedBox(height: 20),
                   Text('오늘의 컨디션: ${log.conditionScore}점', style: const TextStyle(fontWeight: FontWeight.bold)),

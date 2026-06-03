@@ -72,11 +72,18 @@ class _StatsDashboardScreenState extends State<StatsDashboardScreen> {
                 const SizedBox(height: 16),
                 _buildLegend(logs, context),
                 const SizedBox(height: 32),
-                const Text('세션 태그 분포', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text('세션 종류 분포', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 SizedBox(
                   height: 200,
-                  child: PieChart(_buildPieChartData(logs, context)),
+                  child: PieChart(_buildPieChartData(logs, context, true)),
+                ),
+                const SizedBox(height: 32),
+                const Text('코트 종류 분포', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 200,
+                  child: PieChart(_buildPieChartData(logs, context, false)),
                 ),
                 const SizedBox(height: 32),
                 const Text('평균 컨디션', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -227,10 +234,15 @@ class _StatsDashboardScreenState extends State<StatsDashboardScreen> {
     );
   }
 
-  PieChartData _buildPieChartData(List<TennisLogModel> logs, BuildContext context) {
+  PieChartData _buildPieChartData(List<TennisLogModel> logs, BuildContext context, bool isMatchType) {
     final Map<String, int> tagCounts = {};
     for (var log in logs) {
-      for (var tag in log.sessionTags) {
+      if (isMatchType) {
+        for (var tag in log.matchTypes) {
+          tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+        }
+      } else {
+        final tag = log.courtSurface;
         tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
       }
     }

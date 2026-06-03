@@ -15,12 +15,14 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
   final String _testUserId = 'test_user_id';
   final DateTime _selectedDate = DateTime.now();
 
-  List<String> _selectedTags = [];
+  List<String> _selectedMatchTypes = [];
+  String _selectedCourtSurface = '하드코트';
   int _conditionScore = 3;
   Map<String, int> _scores = {};
   final TextEditingController _feedbackController = TextEditingController();
 
-  final List<String> _availableTags = ['연습', '레슨', '단식', '복식', '하드코트', '클레이코트', '잔디코트'];
+  final List<String> _availableMatchTypes = ['연습', '레슨', '단식', '복식'];
+  final List<String> _availableCourtSurfaces = ['하드코트', '클레이코트', '잔디코트', '실내코트'];
   bool _isLoading = true;
 
   @override
@@ -59,13 +61,15 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
         .get();
 
     Map<String, int> initialScores = {for (var title in checklistTitles) title: 2};
-    List<String> initialTags = [];
+    List<String> initialMatchTypes = [];
+    String initialCourtSurface = '하드코트';
     int initialCondition = 3;
     String initialFeedback = '';
 
     if (logDoc.exists) {
       final log = TennisLogModel.fromMap(logDoc.data()!, logDoc.id);
-      initialTags = log.sessionTags;
+      initialMatchTypes = log.matchTypes;
+      initialCourtSurface = log.courtSurface;
       initialCondition = log.conditionScore;
       initialFeedback = log.feedbackText;
       // Merge existing scores with checklist (in case checklist items changed)
@@ -78,7 +82,8 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
 
     setState(() {
       _scores = initialScores;
-      _selectedTags = initialTags;
+      _selectedMatchTypes = initialMatchTypes;
+      _selectedCourtSurface = initialCourtSurface;
       _conditionScore = initialCondition;
       _feedbackController.text = initialFeedback;
       _isLoading = false;
@@ -88,7 +93,8 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
   Future<void> _saveLog() async {
     final log = TennisLogModel(
       date: _selectedDate,
-      sessionTags: _selectedTags,
+      matchTypes: _selectedMatchTypes,
+      courtSurface: _selectedCourtSurface,
       conditionScore: _conditionScore,
       scores: _scores,
       feedbackText: _feedbackController.text,
@@ -130,14 +136,21 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
     );
   }
 
-  void _onTagSelected(String tag, bool selected) {
+  void _onMatchTypeSelected(String type, bool selected) {
     HapticFeedback.lightImpact();
     setState(() {
       if (selected) {
-        _selectedTags.add(tag);
+        _selectedMatchTypes.add(type);
       } else {
-        _selectedTags.remove(tag);
+        _selectedMatchTypes.remove(type);
       }
+    });
+  }
+
+  void _onCourtSurfaceSelected(String surface) {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _selectedCourtSurface = surface;
     });
   }
 
@@ -168,15 +181,32 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _buildSectionCard(
-                  title: '세션 태그',
+                  title: '세션 종류 (다중 선택)',
                   child: Wrap(
                     spacing: 8.0,
                     runSpacing: 8.0,
-                    children: _availableTags.map((tag) {
+                    children: _availableMatchTypes.map((type) {
                       return ChoiceChip(
-                        label: Text(tag),
-                        selected: _selectedTags.contains(tag),
-                        onSelected: (selected) => _onTagSelected(tag, selected),
+                        label: Text(type),
+                        selected: _selectedMatchTypes.contains(type),
+                        onSelected: (selected) => _onMatchTypeSelected(type, selected),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildSectionCard(
+                  title: '코트 종류',
+                  child: Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: _availableCourtSurfaces.map((surface) {
+                      return ChoiceChip(
+                        label: Text(surface),
+                        selected: _selectedCourtSurface == surface,
+                        onSelected: (selected) {
+                          if (selected) _onCourtSurfaceSelected(surface);
+                        },
                       );
                     }).toList(),
                   ),
