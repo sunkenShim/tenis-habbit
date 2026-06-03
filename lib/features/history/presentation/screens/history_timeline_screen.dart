@@ -148,11 +148,40 @@ class _HistoryTimelineScreenState extends State<HistoryTimelineScreen> {
     );
   }
 
+  Future<void> _deleteLog(TennisLogModel log, BuildContext sheetContext) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('기록 삭제'),
+        content: Text('${DateFormat('yyyy년 MM월 dd일').format(log.date)} 기록을 삭제할까요?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('삭제', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_currentUserId)
+        .collection('tennis_logs')
+        .doc(log.documentId)
+        .delete();
+
+    if (sheetContext.mounted) Navigator.pop(sheetContext);
+    _fetchLogs();
+  }
+
   void _showLogDetail(TennisLogModel log) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) {
+      builder: (sheetContext) {
         return DraggableScrollableSheet(
           initialChildSize: 0.6,
           maxChildSize: 0.9,
@@ -164,9 +193,18 @@ class _HistoryTimelineScreenState extends State<HistoryTimelineScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    DateFormat('yyyy년 MM월 dd일 회고').format(log.date),
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        DateFormat('yyyy년 MM월 dd일 회고').format(log.date),
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        onPressed: () => _deleteLog(log, sheetContext),
+                      ),
+                    ],
                   ),
                   const Divider(),
                   const SizedBox(height: 10),

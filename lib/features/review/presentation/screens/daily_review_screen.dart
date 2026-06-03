@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import 'package:tennis_habit/features/review/domain/models/tennis_log_model.dart';
 import 'package:tennis_habit/features/review/presentation/widgets/share_card_widget.dart';
 
@@ -14,7 +15,7 @@ class DailyReviewScreen extends StatefulWidget {
 
 class _DailyReviewScreenState extends State<DailyReviewScreen> {
   String get _currentUserId => FirebaseAuth.instance.currentUser!.uid;
-  final DateTime _selectedDate = DateTime.now();
+  DateTime _selectedDate = DateTime.now();
 
   List<String> _selectedMatchTypes = [];
   String _selectedCourtSurface = '하드코트';
@@ -89,6 +90,19 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
       _feedbackController.text = initialFeedback;
       _isLoading = false;
     });
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() => _selectedDate = picked);
+      _fetchChecklistsAndTodayLog();
+    }
   }
 
   Future<void> _saveLog() async {
@@ -166,7 +180,19 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('오늘의 테니스 회고'),
+        title: GestureDetector(
+          onTap: _isLoading ? null : _pickDate,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                DateFormat('M월 d일 회고').format(_selectedDate),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.arrow_drop_down, size: 20),
+            ],
+          ),
+        ),
         actions: [
           IconButton(
             onPressed: _isLoading ? null : _saveLog,
