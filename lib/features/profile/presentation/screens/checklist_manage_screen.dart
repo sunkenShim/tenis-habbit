@@ -69,7 +69,9 @@ class _ChecklistManageScreenState extends State<ChecklistManageScreen> {
 
   Future<void> _loadItems() async {
     setState(() => _isLoading = true);
-    final snapshot = await _collection.orderBy('order').get();
+
+    // createdAt 기준으로 전체 로드 (order 필드 없는 문서도 포함)
+    final snapshot = await _collection.orderBy('createdAt').get();
 
     List<_ChecklistItem> loaded = [];
     bool needsMigration = false;
@@ -86,7 +88,7 @@ class _ChecklistManageScreenState extends State<ChecklistManageScreen> {
       ));
     }
 
-    // order 필드가 없는 기존 문서들을 일괄 업데이트
+    // order 필드가 없는 기존 문서들 마이그레이션
     if (needsMigration) {
       final batch = FirebaseFirestore.instance.batch();
       for (int i = 0; i < loaded.length; i++) {
@@ -94,6 +96,9 @@ class _ChecklistManageScreenState extends State<ChecklistManageScreen> {
         loaded[i].order = i;
       }
       await batch.commit();
+    } else {
+      // order 필드 기준 정렬
+      loaded.sort((a, b) => a.order.compareTo(b.order));
     }
 
     setState(() {
