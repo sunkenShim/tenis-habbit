@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tennis_habit/features/review/domain/models/tennis_log_model.dart';
 import 'package:intl/intl.dart';
 
@@ -12,7 +13,7 @@ class HistoryTimelineScreen extends StatefulWidget {
 }
 
 class _HistoryTimelineScreenState extends State<HistoryTimelineScreen> {
-  final String _testUserId = 'test_user_id';
+  String get _currentUserId => FirebaseAuth.instance.currentUser!.uid;
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -28,7 +29,7 @@ class _HistoryTimelineScreenState extends State<HistoryTimelineScreen> {
   Future<void> _fetchLogs() async {
     final querySnapshot = await FirebaseFirestore.instance
         .collection('users')
-        .doc(_testUserId)
+        .doc(_currentUserId)
         .collection('tennis_logs')
         .get();
 

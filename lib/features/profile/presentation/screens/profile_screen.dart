@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'checklist_manage_screen.dart';
 import 'package:tennis_habit/core/theme/app_theme.dart';
 import 'package:tennis_habit/main.dart';
@@ -12,7 +13,12 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final String _testUserId = 'test_user_id';
+  String get _currentUserId => FirebaseAuth.instance.currentUser!.uid;
+  final User _currentUser = FirebaseAuth.instance.currentUser!;
+
+  Future<void> _signOut() async {
+    await FirebaseAuth.instance.signOut();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,16 +31,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Center(
+            Center(
               child: Column(
                 children: [
-                  CircleAvatar(
+                  const CircleAvatar(
                     radius: 50,
                     child: Icon(Icons.person, size: 50),
                   ),
-                  SizedBox(height: 16),
-                  Text('테스트 유저', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  Text('test_user_id', style: TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 16),
+                  Text(_currentUser.displayName ?? '테니스의길', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text(_currentUser.email ?? '', style: const TextStyle(color: Colors.grey)),
                 ],
               ),
             ),
@@ -84,6 +90,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
               subtitle: const Text('1.0.0'),
               onTap: () {},
             ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.policy),
+              title: const Text('오픈소스 라이선스'),
+              onTap: () {
+                showLicensePage(
+                  context: context,
+                  applicationName: 'Tennis Habit',
+                  applicationVersion: '1.0.0',
+                  applicationLegalese: 'Copyright 2026 Tennis Habit',
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text('로그아웃', style: TextStyle(color: Colors.red)),
+              onTap: _signOut,
+            ),
+            const SizedBox(height: 40),
           ],
         ),
       ),

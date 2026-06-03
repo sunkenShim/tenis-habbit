@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:tennis_habit/features/review/domain/models/tennis_log_model.dart';
 import 'package:tennis_habit/core/utils/mock_data_generator.dart';
@@ -12,7 +13,7 @@ class StatsDashboardScreen extends StatefulWidget {
 }
 
 class _StatsDashboardScreenState extends State<StatsDashboardScreen> {
-  final String _testUserId = 'test_user_id';
+  String get _currentUserId => FirebaseAuth.instance.currentUser!.uid;
   
   // 선택되지 않은 항목들을 관리 (기본적으로 모두 선택된 상태)
   final Set<String> _unselectedItems = {};
@@ -25,7 +26,7 @@ class _StatsDashboardScreenState extends State<StatsDashboardScreen> {
         actions: [
           TextButton(
             onPressed: () async {
-              await MockDataGenerator.generate14DaysLogs(_testUserId);
+              await MockDataGenerator.generate14DaysLogs(_currentUserId);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('14일치 가상 데이터가 생성되었습니다.')),
@@ -39,7 +40,7 @@ class _StatsDashboardScreenState extends State<StatsDashboardScreen> {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
-            .doc(_testUserId)
+            .doc(_currentUserId)
             .collection('tennis_logs')
             .orderBy('date', descending: false)
             .limit(14)

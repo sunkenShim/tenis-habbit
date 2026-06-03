@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tennis_habit/features/review/domain/models/tennis_log_model.dart';
 import 'package:tennis_habit/features/review/presentation/widgets/share_card_widget.dart';
 
@@ -12,7 +13,7 @@ class DailyReviewScreen extends StatefulWidget {
 }
 
 class _DailyReviewScreenState extends State<DailyReviewScreen> {
-  final String _testUserId = 'test_user_id';
+  String get _currentUserId => FirebaseAuth.instance.currentUser!.uid;
   final DateTime _selectedDate = DateTime.now();
 
   List<String> _selectedMatchTypes = [];
@@ -37,7 +38,7 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
     // 1. Fetch custom checklists
     final checklistSnapshot = await FirebaseFirestore.instance
         .collection('users')
-        .doc(_testUserId)
+        .doc(_currentUserId)
         .collection('checklists')
         .orderBy('createdAt', descending: false)
         .get();
@@ -55,7 +56,7 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
     final logId = "${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}";
     final logDoc = await FirebaseFirestore.instance
         .collection('users')
-        .doc(_testUserId)
+        .doc(_currentUserId)
         .collection('tennis_logs')
         .doc(logId)
         .get();
@@ -103,7 +104,7 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
     try {
       await FirebaseFirestore.instance
           .collection('users')
-          .doc(_testUserId)
+          .doc(_currentUserId)
           .collection('tennis_logs')
           .doc(log.documentId)
           .set(log.toMap(), SetOptions(merge: true));

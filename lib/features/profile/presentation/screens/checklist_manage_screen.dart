@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ChecklistManageScreen extends StatefulWidget {
   const ChecklistManageScreen({super.key});
@@ -9,7 +10,7 @@ class ChecklistManageScreen extends StatefulWidget {
 }
 
 class _ChecklistManageScreenState extends State<ChecklistManageScreen> {
-  final String _testUserId = 'test_user_id';
+  String get _currentUserId => FirebaseAuth.instance.currentUser!.uid;
   final TextEditingController _controller = TextEditingController();
 
   @override
@@ -21,7 +22,7 @@ class _ChecklistManageScreenState extends State<ChecklistManageScreen> {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
-            .doc(_testUserId)
+            .doc(_currentUserId)
             .collection('checklists')
             .orderBy('createdAt', descending: false)
             .snapshots(),
@@ -86,7 +87,7 @@ class _ChecklistManageScreenState extends State<ChecklistManageScreen> {
   Future<void> _addItem(String title) async {
     await FirebaseFirestore.instance
         .collection('users')
-        .doc(_testUserId)
+        .doc(_currentUserId)
         .collection('checklists')
         .add({
       'title': title,
@@ -97,7 +98,7 @@ class _ChecklistManageScreenState extends State<ChecklistManageScreen> {
   Future<void> _deleteItem(String id) async {
     await FirebaseFirestore.instance
         .collection('users')
-        .doc(_testUserId)
+        .doc(_currentUserId)
         .collection('checklists')
         .doc(id)
         .delete();
