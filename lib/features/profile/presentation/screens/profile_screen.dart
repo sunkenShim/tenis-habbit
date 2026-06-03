@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'checklist_manage_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -138,6 +139,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 32),
                 const Text('앱 설정', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.list_alt),
+                  title: const Text('체크리스트 관리'),
+                  subtitle: const Text('나만의 훈련 목표를 설정하세요'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ChecklistManageScreen()),
+                    );
+                  },
+                ),
                 ListTile(
                   leading: const Icon(Icons.notifications),
                   title: const Text('알림 설정'),

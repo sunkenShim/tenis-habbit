@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../features/review/domain/models/tennis_log_model.dart';
 
 class MockDataGenerator {
-  static final List<String> _tags = ['레슨', '단식', '복식', '하드코트', '클레이코트'];
+  static final List<String> _tags = ['연습', '레슨', '단식', '복식', '하드코트', '클레이코트'];
   static final List<String> _feedbacks = [
     '오늘은 서브가 아주 잘 들어갔다.',
     '포핸드 스트로크 시 라켓 면이 너무 닫히는 것 같다.',
