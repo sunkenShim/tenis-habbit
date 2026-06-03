@@ -59,14 +59,14 @@ class StatsDashboardScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 SizedBox(
                   height: 250,
-                  child: LineChart(_buildLineChartData(logs)),
+                  child: LineChart(_buildLineChartData(logs, context)),
                 ),
                 const SizedBox(height: 32),
                 const Text('세션 태그 분포', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 SizedBox(
                   height: 200,
-                  child: PieChart(_buildPieChartData(logs)),
+                  child: PieChart(_buildPieChartData(logs, context)),
                 ),
                 const SizedBox(height: 32),
                 const Text('평균 컨디션', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -80,7 +80,7 @@ class StatsDashboardScreen extends StatelessWidget {
     );
   }
 
-  LineChartData _buildLineChartData(List<TennisLogModel> logs) {
+  LineChartData _buildLineChartData(List<TennisLogModel> logs, BuildContext context) {
     final spots = <FlSpot>[];
     for (int i = 0; i < logs.length; i++) {
       double avgScore = logs[i].scores.values.fold(0, (sum, item) => sum + item) / logs[i].scores.length;
@@ -106,7 +106,7 @@ class StatsDashboardScreen extends StatelessWidget {
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       ),
-      borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade300)),
+      borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade800)),
       minX: 0,
       maxX: logs.length.toDouble() - 1,
       minY: 1,
@@ -115,17 +115,17 @@ class StatsDashboardScreen extends StatelessWidget {
         LineChartBarData(
           spots: spots,
           isCurved: true,
-          color: Colors.green,
+          color: Theme.of(context).colorScheme.primary, // Neon Yellow
           barWidth: 4,
           isStrokeCapRound: true,
           dotData: const FlDotData(show: true),
-          belowBarData: BarAreaData(show: true, color: Colors.green.withOpacity(0.1)),
+          belowBarData: BarAreaData(show: true, color: Theme.of(context).colorScheme.primary.withOpacity(0.1)),
         ),
       ],
     );
   }
 
-  PieChartData _buildPieChartData(List<TennisLogModel> logs) {
+  PieChartData _buildPieChartData(List<TennisLogModel> logs, BuildContext context) {
     final Map<String, int> tagCounts = {};
     for (var log in logs) {
       for (var tag in log.sessionTags) {
@@ -133,7 +133,13 @@ class StatsDashboardScreen extends StatelessWidget {
       }
     }
 
-    final colors = [Colors.blue, Colors.orange, Colors.purple, Colors.red, Colors.teal];
+    final colors = [
+      Theme.of(context).colorScheme.primary,
+      Theme.of(context).colorScheme.secondary,
+      Colors.purpleAccent,
+      Colors.orangeAccent,
+      Colors.tealAccent
+    ];
     int colorIndex = 0;
 
     return PieChartData(

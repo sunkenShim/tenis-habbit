@@ -14,16 +14,17 @@ class ShareCardWidget extends StatelessWidget {
       width: 300,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.green.shade700,
+        color: const Color(0xFF0F172A), // nightBackground
         borderRadius: BorderRadius.circular(20),
         image: DecorationImage(
           image: const NetworkImage('https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?auto=format&fit=crop&q=80&w=400'),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
-            Colors.black.withOpacity(0.4),
+            Colors.black.withOpacity(0.6), // Make background darker
             BlendMode.darken,
           ),
         ),
+        border: Border.all(color: const Color(0xFFCCFF00), width: 1), // Neon border
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -35,7 +36,7 @@ class ShareCardWidget extends StatelessWidget {
               const Text(
                 'TENNIS HABIT',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFFCCFF00), // tennisNeon
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2,
                 ),
@@ -49,7 +50,7 @@ class ShareCardWidget extends StatelessWidget {
           const SizedBox(height: 40),
           const Text(
             '오늘의 깨달음',
-            style: TextStyle(color: Colors.white70, fontSize: 12),
+            style: TextStyle(color: Color(0xFF0052FF), fontSize: 12, fontWeight: FontWeight.bold), // hardcourtBlue
           ),
           const SizedBox(height: 8),
           Text(
@@ -78,8 +79,8 @@ class ShareCardWidget extends StatelessWidget {
             icon: const Icon(Icons.share),
             label: const Text('오운완 공유하기'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.green.shade700,
+              backgroundColor: const Color(0xFFCCFF00),
+              foregroundColor: Colors.black,
               minimumSize: const Size(double.infinity, 45),
             ),
           ),

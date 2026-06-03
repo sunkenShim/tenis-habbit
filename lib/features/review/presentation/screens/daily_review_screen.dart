@@ -165,97 +165,155 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
         : SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text('세션 태그', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8.0,
-                  children: _availableTags.map((tag) {
-                    return ChoiceChip(
-                      label: Text(tag),
-                      selected: _selectedTags.contains(tag),
-                      onSelected: (selected) => _onTagSelected(tag, selected),
-                    );
-                  }).toList(),
+                _buildSectionCard(
+                  title: '세션 태그',
+                  child: Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: _availableTags.map((tag) {
+                      return ChoiceChip(
+                        label: Text(tag),
+                        selected: _selectedTags.contains(tag),
+                        onSelected: (selected) => _onTagSelected(tag, selected),
+                      );
+                    }).toList(),
+                  ),
                 ),
-                const SizedBox(height: 24),
-                const Text('오늘의 컨디션', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Slider(
-                  value: _conditionScore.toDouble(),
-                  min: 1,
-                  max: 5,
-                  divisions: 4,
-                  label: _conditionScore.toString(),
-                  onChanged: (value) {
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      _conditionScore = value.round();
-                    });
-                  },
+                const SizedBox(height: 16),
+                _buildSectionCard(
+                  title: '오늘의 컨디션',
+                  child: Column(
+                    children: [
+                      Slider(
+                        value: _conditionScore.toDouble(),
+                        min: 1,
+                        max: 5,
+                        divisions: 4,
+                        label: _conditionScore.toString(),
+                        onChanged: (value) {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            _conditionScore = value.round();
+                          });
+                        },
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: const [
+                            Text('지침', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                            Text('최상', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('핵심 체크리스트', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    TextButton(
-                      onPressed: _fetchChecklistsAndTodayLog,
-                      child: const Icon(Icons.refresh, size: 20),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                ..._scores.keys.map((criteria) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(criteria, style: const TextStyle(fontSize: 16)),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                const SizedBox(height: 16),
+                _buildSectionCard(
+                  title: '핵심 체크리스트',
+                  trailing: IconButton(
+                    icon: const Icon(Icons.refresh, size: 20),
+                    onPressed: _fetchChecklistsAndTodayLog,
+                    tooltip: '체크리스트 새로고침',
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: _scores.keys.map((criteria) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _ScoreButton(
-                              emoji: '😥',
-                              label: '아쉬움',
-                              isSelected: _scores[criteria] == 1,
-                              onTap: () => _onScoreChanged(criteria, 1),
-                            ),
-                            _ScoreButton(
-                              emoji: '😐',
-                              label: '보통',
-                              isSelected: _scores[criteria] == 2,
-                              onTap: () => _onScoreChanged(criteria, 2),
-                            ),
-                            _ScoreButton(
-                              emoji: '🔥',
-                              label: '완벽함',
-                              isSelected: _scores[criteria] == 3,
-                              onTap: () => _onScoreChanged(criteria, 3),
+                            Text(criteria, style: const TextStyle(fontSize: 15)),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                Expanded(
+                                  child: _ScoreButton(
+                                    emoji: '😥',
+                                    label: '아쉬움',
+                                    isSelected: _scores[criteria] == 1,
+                                    onTap: () => _onScoreChanged(criteria, 1),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _ScoreButton(
+                                    emoji: '😐',
+                                    label: '보통',
+                                    isSelected: _scores[criteria] == 2,
+                                    onTap: () => _onScoreChanged(criteria, 2),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _ScoreButton(
+                                    emoji: '🔥',
+                                    label: '완벽함',
+                                    isSelected: _scores[criteria] == 3,
+                                    onTap: () => _onScoreChanged(criteria, 3),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                const SizedBox(height: 24),
-                const Text('오늘의 깨달음 한 줄', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _feedbackController,
-                  decoration: const InputDecoration(
-                    hintText: '예: 오늘은 백핸드 시선을 끝까지 고정했다.',
-                    border: OutlineInputBorder(),
+                      );
+                    }).toList(),
                   ),
-                  maxLength: 100,
+                ),
+                const SizedBox(height: 16),
+                _buildSectionCard(
+                  title: '오늘의 깨달음',
+                  child: TextField(
+                    controller: _feedbackController,
+                    maxLines: 3,
+                    minLines: 1,
+                    decoration: const InputDecoration(
+                      hintText: '예: 오늘은 백핸드 시선을 끝까지 고정했다.',
+                    ),
+                    maxLength: 100,
+                  ),
                 ),
                 const SizedBox(height: 40),
               ],
             ),
           ),
+    );
+  }
+
+  Widget _buildSectionCard({required String title, Widget? trailing, required Widget child}) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                if (trailing != null) trailing,
+              ],
+            ),
+            const SizedBox(height: 16),
+            child,
+          ],
+        ),
+      ),
     );
   }
 }
@@ -281,9 +339,9 @@ class _ScoreButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).primaryColor.withOpacity(0.1) : Colors.transparent,
+          color: isSelected ? (emoji == '🔥' ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : Theme.of(context).colorScheme.secondary.withOpacity(0.1)) : Colors.transparent,
           border: Border.all(
-            color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade300,
+            color: isSelected ? (emoji == '🔥' ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary) : Colors.grey.shade800,
             width: 2,
           ),
           borderRadius: BorderRadius.circular(12),
@@ -295,7 +353,7 @@ class _ScoreButton extends StatelessWidget {
             Text(label, style: TextStyle(
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? Theme.of(context).primaryColor : Colors.black54,
+              color: isSelected ? (emoji == '🔥' ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary) : Colors.grey.shade400,
             )),
           ],
         ),
