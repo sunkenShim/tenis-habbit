@@ -12,6 +12,18 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
+  bool _isAppleSignInAvailable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAppleSignIn();
+  }
+
+  Future<void> _checkAppleSignIn() async {
+    final available = await SignInWithApple.isAvailable();
+    if (mounted) setState(() => _isAppleSignInAvailable = available);
+  }
 
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
@@ -30,9 +42,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
       await FirebaseAuth.instance.signInWithCredential(credential);
       // 로그인 성공 후 처리는 main.dart의 authStateChanges에서 감지하여 화면 이동
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('========== GOOGLE SIGN-IN ERROR ==========');
+      debugPrint('Error: $e');
+      debugPrint('StackTrace: $stackTrace');
+      debugPrint('==========================================');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Google 로그인 실패: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google 로그인에 실패했습니다. 다시 시도해주세요.')),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -55,9 +73,15 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       await FirebaseAuth.instance.signInWithCredential(credential);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('========== APPLE SIGN-IN ERROR ==========');
+      debugPrint('Error: $e');
+      debugPrint('StackTrace: $stackTrace');
+      debugPrint('=========================================');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Apple 로그인 실패: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Apple 로그인에 실패했습니다. 다시 시도해주세요.')),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -109,9 +133,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: _signInWithGoogle,
-                        icon: Image.network(
-                          'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
-                          height: 24,
+                        icon: Container(
+                          width: 22,
+                          height: 22,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'G',
+                              style: TextStyle(
+                                color: Color(0xFF4285F4),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
                         ),
                         label: const Text('Google로 계속하기'),
                         style: ElevatedButton.styleFrom(
@@ -120,20 +158,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _signInWithApple,
-                        icon: const Icon(Icons.apple, size: 28),
-                        label: const Text('Apple로 계속하기'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          foregroundColor: Colors.white,
-                          side: const BorderSide(color: Colors.white24),
+                    if (_isAppleSignInAvailable) ...[
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _signInWithApple,
+                          icon: const Icon(Icons.apple, size: 28),
+                          label: const Text('Apple로 계속하기'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Colors.white24),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               const SizedBox(height: 48),
