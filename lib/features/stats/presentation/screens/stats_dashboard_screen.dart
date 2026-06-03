@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:tennis_habit/features/review/domain/models/tennis_log_model.dart';
-import 'package:tennis_habit/core/utils/mock_data_generator.dart';
 
 class StatsDashboardScreen extends StatefulWidget {
   const StatsDashboardScreen({super.key});
@@ -23,19 +22,6 @@ class _StatsDashboardScreenState extends State<StatsDashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('테니스 통계'),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await MockDataGenerator.generate14DaysLogs(_currentUserId);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('14일치 가상 데이터가 생성되었습니다.')),
-                );
-              }
-            },
-            child: const Text('데이터 생성'),
-          ),
-        ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -56,7 +42,7 @@ class _StatsDashboardScreenState extends State<StatsDashboardScreen> {
               .toList();
 
           if (logs.isEmpty) {
-            return const Center(child: Text('데이터가 없습니다. 우측 상단 버튼으로 생성해보세요.'));
+            return const Center(child: Text('아직 기록이 없습니다. 회고를 작성하면 통계가 표시됩니다.'));
           }
 
           return SingleChildScrollView(
